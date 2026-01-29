@@ -22,8 +22,5 @@ jobs:
         with:
           go-version: 1.25
       - name: Run unit tests
-        run: |
-           pwd
-           ls -la
-           ls -la go.mod
+        run: 
            go test -v ./...
