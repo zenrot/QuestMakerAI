@@ -22,5 +22,8 @@ jobs:
         with:
           go-version: 1.25
       - name: Run unit tests
-        working-directory: QuestMakerAI
-        run: go test -v ./...
+        run: |
+           pwd
+           ls -la
+           ls -la go.mod
+           go test -v ./...
