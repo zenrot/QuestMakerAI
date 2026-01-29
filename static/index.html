@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>QuestMakerAI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+        }
+        input, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+        .task {
+            border: 1px solid #ccc;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        .correct { color: green; }
+        .wrong { color: red; }
+    </style>
+</head>
+<body>
+
+<h1>QuestMakerAI</h1>
+
+<label>Yandex API Key</label>
+<input id="apiKey" type="password">
+
+<label>Тема</label>
+<input id="topic" placeholder="UNIX, Linux, Networking">
+
+<label>Количество вопросов</label>
+<input id="count" type="number" value="5">
+
+<button onclick="generate()">Сгенерировать тест</button>
+
+<div id="tasks"></div>
+<button id="checkBtn" onclick="check()" style="display:none;">Проверить</button>
+<div id="result"></div>
+
+<script>
+    let tasks = [];
+
+    async function generate() {
+        document.getElementById("tasks").innerHTML = "";
+        document.getElementById("result").innerText = "";
+        document.getElementById("checkBtn").style.display = "none";
+
+        const res = await fetch("/api/v1/questions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Api-Key " + document.getElementById("apiKey").value
+            },
+            body: JSON.stringify({
+                topic: document.getElementById("topic").value,
+                question_number: parseInt(document.getElementById("count").value)
+            })
+        });
+
+        if (!res.ok) {
+            alert("Ошибка запроса");
+            return;
+        }
+
+        const data = await res.json();
+        tasks = data.tasks;
+
+        render();
+        document.getElementById("checkBtn").style.display = "block";
+    }
+
+    function shuffle(arr) {
+        return arr.sort(() => Math.random() - 0.5);
+    }
+
+    function render() {
+        const root = document.getElementById("tasks");
+        root.innerHTML = "";
+
+        tasks.forEach((t, i) => {
+            const answers = shuffle([
+                t.correct_answer,
+                ...t.incorrect_answers
+            ]);
+
+            const div = document.createElement("div");
+            div.className = "task";
+            div.innerHTML = `<b>${i + 1}. ${t.question}</b>`;
+
+            answers.forEach(a => {
+                div.innerHTML += `
+        <div>
+          <input type="radio" name="q${i}" value="${a}">
+          ${a}
+        </div>
+      `;
+            });
+
+            root.appendChild(div);
+        });
+    }
+
+    function check() {
+        let correct = 0;
+
+        tasks.forEach((t, i) => {
+            const selected = document.querySelector(`input[name="q${i}"]:checked`);
+            if (selected && selected.value === t.correct_answer) {
+                correct++;
+            }
+        });
+
+        document.getElementById("result").innerText =
+            `Результат: ${correct} / ${tasks.length}`;
+    }
+</script>
+
+</body>
+</html>
